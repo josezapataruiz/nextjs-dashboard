@@ -67,3 +67,19 @@ export const generatePagination = (currentPage: number, totalPages: number) => {
     totalPages,
   ];
 };
+
+export const debounce = <T extends (...args: any[]) => void>(
+  func: T,
+  delay: number,
+) => {
+  let timeoutId: ReturnType<typeof setTimeout>;
+
+  return (...args: Parameters<T>) => {
+    const context = this;
+
+    clearTimeout(timeoutId);
+    timeoutId = setTimeout(() => {
+      func.apply(context, args);
+    }, delay);
+  };
+};
