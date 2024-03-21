@@ -1,6 +1,7 @@
 import { createMySQLPool } from './db-connection';
 import {
-  Invoice,
+  CustomerField,
+  InvoiceForm,
   InvoicesTable,
   LatestInvoice,
   LatestInvoiceRaw,
@@ -16,12 +17,12 @@ export async function fetchRevenue(): Promise<Revenue[]> {
     // Artificially delay a response for demo purposes.
     // Don't do this in production :)
 
-    console.log('Fetching revenue data...');
+    // console.log('Fetching revenue data...');
     await new Promise((resolve) => setTimeout(resolve, 3000));
 
     const [rows] = await createMySQLPool.query(`SELECT * FROM revenue`);
 
-    console.log('Data fetch completed after 3 seconds.');
+    // console.log('Data fetch completed after 3 seconds.');
 
     return rows as Revenue[];
   } catch (error) {
@@ -150,5 +151,50 @@ export async function fetchInvoicesPages(query: string): Promise<number> {
   } catch (error) {
     console.error('Database Error:', error);
     throw new Error('Failed to fetch total number of invoices.');
+  }
+}
+
+export async function fetchCustomers(): Promise<CustomerField[]> {
+  try {
+    const [rows] = await createMySQLPool.query(`
+      SELECT
+        id,
+        name
+      FROM customers
+      ORDER BY name ASC
+    `);
+
+    return rows as CustomerField[];
+  } catch (err) {
+    console.error('Database Error:', err);
+    throw new Error('Failed to fetch all customers.');
+  }
+}
+
+export async function fetchInvoiceById(id: string): Promise<InvoiceForm> {
+  try {
+    const [rows] = await createMySQLPool.query(
+      `
+      SELECT
+        invoices.id,
+        invoices.customer_id,
+        invoices.amount,
+        invoices.status
+      FROM invoices
+      WHERE invoices.id = ?;
+    `,
+      [id],
+    );
+
+    const invoice = rows.map((invoice) => ({
+      ...invoice,
+      // Convert amount from cents to dollars
+      amount: invoice.amount / 100,
+    }));
+
+    return invoice[0] as InvoiceForm;
+  } catch (error) {
+    console.error('Database Error:', error);
+    throw new Error('Failed to fetch invoice.');
   }
 }
